@@ -1,0 +1,76 @@
+package property
+
+import "strings"
+
+type RomanNumeral struct {
+	Value  int
+	Symbol string
+}
+
+var romanNumerals = []RomanNumeral{
+	{1000, "M"},
+	{900, "CM"},
+	{500, "D"},
+	{400, "CD"},
+	{100, "C"},
+	{90, "XC"},
+	{50, "L"},
+	{40, "XL"},
+	{10, "X"},
+	{9, "IX"},
+	{5, "V"},
+	{4, "IV"},
+	{1, "I"},
+}
+
+func ConvertToRoman(n int) string {
+	var result strings.Builder
+
+	for _, numeral := range romanNumerals {
+		for n >= numeral.Value {
+			result.WriteString(numeral.Symbol)
+			n -= numeral.Value
+		}
+	}
+
+	return result.String()
+}
+
+func ConvertToRomanRec(n int) string {
+	if n == 0 {
+		return ""
+	}
+
+	for _, numeral := range romanNumerals {
+		if n >= numeral.Value {
+			return numeral.Symbol + ConvertToRomanRec(n-numeral.Value)
+		}
+	}
+	return ""
+}
+
+func ConvertToArabic(roman string) int {
+	arabic := 0
+
+	for _, numeral := range romanNumerals {
+		for strings.HasPrefix(roman, numeral.Symbol) {
+			arabic += numeral.Value
+			roman = strings.TrimPrefix(roman, numeral.Symbol)
+
+		}
+	}
+	return arabic
+}
+
+func ConvertToArabicRec(roman string) int {
+	if roman == "" {
+		return 0
+	}
+
+	for _, numeral := range romanNumerals {
+		if strings.HasPrefix(roman, numeral.Symbol) {
+			return numeral.Value + ConvertToArabicRec(strings.TrimPrefix(roman, numeral.Symbol))
+		}
+	}
+	return 0
+}
