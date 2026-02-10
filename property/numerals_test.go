@@ -2,11 +2,13 @@ package property
 
 import (
 	"fmt"
+	"log"
 	"testing"
+	"testing/quick"
 )
 
 var cases = []struct {
-	Arabic int
+	Arabic uint16
 	Roman  string
 }{
 	{1, "I"},
@@ -91,5 +93,21 @@ func BenchmarkConvertToArabicRecursive(b *testing.B) {
 		for _, c := range cases {
 			ConvertToArabicRec(c.Roman)
 		}
+	}
+}
+
+func TestPropertiesOfConversion(t *testing.T) {
+	assertion := func(arabic uint16) bool {
+		if arabic <= 0 || arabic > 3999 {
+			log.Println("skipping invalid input:", arabic)
+			return true // skip invalid inputs
+		}
+		roman := ConvertToRoman(arabic)
+		fromRoman := ConvertToArabic(roman)
+		return fromRoman == arabic
+	}
+	if err := quick.Check(assertion, &quick.Config{MaxCount: 1000}); err != nil {
+		t.Error(err)
+
 	}
 }
