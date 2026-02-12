@@ -1,11 +1,16 @@
 package arrays
 
+// Sum returns the sum of a slice of integers.
 func Sum(numbers []int) int {
-	sum := 0
-	for _, number := range numbers {
-		sum += number
+	add := func(acc, x int) int {
+		return acc + x
 	}
-	return sum
+	return Reduce(numbers, add)
+	// sum := 0
+	// for _, number := range numbers {
+	// 	sum += number
+	// }
+	// return sum
 }
 
 func SumAll(numbersToSum ...[]int) []int {
@@ -29,4 +34,23 @@ func SumAllTails(numbersToSum ...[]int) []int {
 	}
 
 	return sums
+}
+
+func Reduce[T any](collection []T, reducer func(T, T) T) T {
+	if len(collection) == 0 {
+		var zeroValue T
+		return zeroValue
+	}
+	var value T
+
+	for i, item := range collection {
+		if i == 0 {
+			value = item
+			continue
+		}
+
+		value = reducer(value, collection[i])
+	}
+	return value
+
 }
