@@ -5,6 +5,7 @@ import (
 	"embed"
 	"html/template"
 	"io"
+	"strings"
 
 	"github.com/yuin/goldmark"
 )
@@ -16,8 +17,17 @@ type Post struct {
 	Body        string
 }
 
+func (p Post) SanitizedTitle() string {
+	return strings.ToLower(strings.Replace(p.Title, " ", "-", -1))
+}
+
 type PostRenderer struct {
 	templ *template.Template
+}
+
+type PostViewModel struct {
+	Title, SanitizedTitle, Description, Body string
+	Tags                                     []string
 }
 
 func NewPostRenderer() (*PostRenderer, error) {
@@ -30,11 +40,12 @@ func NewPostRenderer() (*PostRenderer, error) {
 }
 
 func (pr *PostRenderer) Render(w io.Writer, post Post) error {
-	if err := pr.templ.ExecuteTemplate(w, "blog.gohtml", post); err != nil {
-		return err
-	}
+	return pr.templ.ExecuteTemplate(w, "blog.gohtml", post)
 
-	return nil
+}
+
+func (pr *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
+	return pr.templ.ExecuteTemplate(w, "index.gohtml", posts)
 }
 
 var (
