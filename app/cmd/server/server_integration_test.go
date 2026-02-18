@@ -10,6 +10,7 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	database, cleanDatabase := createTempFile(t, `[]`)
 	defer cleanDatabase()
 	store, err := NewFileSystemPlayerStore(database)
+
 	assertNoError(t, err)
 
 	server := NewPlayerServer(store)
@@ -31,11 +32,11 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, newLeagueRequest())
 		assertStatus(t, response.Code, http.StatusOK)
+
 		got := getLeagueFromResponse(t, response.Body)
-		want := League{
+		want := []Player{
 			{"Pepper", 3},
 		}
 		assertLeague(t, got, want)
 	})
-
 }
