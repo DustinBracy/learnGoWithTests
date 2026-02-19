@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 
 	poker "github.com/dustinbracy/learnGoWithTests/app"
 )
@@ -19,13 +20,15 @@ var (
 type GameSpy struct {
 	StartedWith  int
 	FinishedWith string
+	BlindAlert   []byte
 	StartCalled  bool
 	FinishCalled bool
 }
 
-func (g *GameSpy) Start(numberOfPlayers int, to io.Writer) {
+func (g *GameSpy) Start(numberOfPlayers int, out io.Writer) {
 	g.StartCalled = true
 	g.StartedWith = numberOfPlayers
+	out.Write(g.BlindAlert)
 }
 
 func (g *GameSpy) Finish(winner string) {
@@ -76,16 +79,20 @@ func TestCLI(t *testing.T) {
 
 func assertGameStartedWith(t *testing.T, game *GameSpy, numberOfPlayers int) {
 	t.Helper()
-
-	if game.StartedWith != numberOfPlayers {
+	passed := retryUntil(500*time.Millisecond, func() bool {
+		return game.StartedWith == numberOfPlayers
+	})
+	if !passed {
 		t.Errorf("game started with %d players, want %d", game.StartedWith, numberOfPlayers)
 	}
 }
 
 func assertFinishCalledWith(t *testing.T, game *GameSpy, winner string) {
 	t.Helper()
-
-	if game.FinishedWith != winner {
+	passed := retryUntil(500*time.Millisecond, func() bool {
+		return game.FinishedWith == winner
+	})
+	if !passed {
 		t.Errorf("game finished with winner %q, want %q", game.FinishedWith, winner)
 	}
 }
@@ -109,4 +116,14 @@ func assertMessagesSentToUser(t *testing.T, stdout *bytes.Buffer, messages ...st
 	if got != want {
 		t.Errorf("got %q sent to stdout, but expected %q", got, want)
 	}
+}
+
+func retryUntil(timeout time.Duration, condition func() bool) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if condition() {
+			return true
+		}
+	}
+	return false
 }
