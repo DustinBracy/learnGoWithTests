@@ -2,35 +2,15 @@ package poker_test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
-	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	poker "github.com/dustinbracy/learnGoWithTests/app"
 )
 
-type ScheduledAlert struct {
-	at     time.Duration
-	amount int
-}
-
-func (s *ScheduledAlert) String() string {
-	return fmt.Sprintf("%d chips at %v", s.amount, s.at)
-}
-
-type SpyBlindAlerter struct {
-	alerts []ScheduledAlert
-}
-
-func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int) {
-	s.alerts = append(s.alerts, ScheduledAlert{at, amount})
-}
-
 var (
-	dummyBlindAlerter = &SpyBlindAlerter{}
+	dummyBlindAlerter = &poker.SpyBlindAlerter{}
 	dummyPlayerStore  = &poker.StubPlayerStore{}
 	dummyStdIn        = &bytes.Buffer{}
 	dummyStdOut       = &bytes.Buffer{}
@@ -92,76 +72,6 @@ func TestCLI(t *testing.T) {
 		assertGameNotStarted(t, game)
 		assertMessagesSentToUser(t, stdout, poker.PlayerPrompt, "\n"+poker.InvalidPlayersErrMsg)
 	})
-}
-
-func TestGame_Start(t *testing.T) {
-	t.Run("schedules alerts for 5 players on game start", func(t *testing.T) {
-
-		blindAlerter := &SpyBlindAlerter{}
-		game := poker.NewGame(dummyPlayerStore, blindAlerter)
-		game.Start(5)
-
-		cases := []ScheduledAlert{
-			{0 * time.Second, 100},
-			{10 * time.Minute, 200},
-			{20 * time.Minute, 300},
-			{30 * time.Minute, 400},
-			{40 * time.Minute, 500},
-			{50 * time.Minute, 600},
-			{60 * time.Minute, 800},
-			{70 * time.Minute, 1000},
-			{80 * time.Minute, 2000},
-			{90 * time.Minute, 4000},
-			{100 * time.Minute, 8000},
-		}
-
-		checkSchedulingCases(t, blindAlerter, cases)
-	})
-
-	t.Run("schedules alerts for 7 players on game start", func(t *testing.T) {
-
-		blindAlerter := &SpyBlindAlerter{}
-		game := poker.NewGame(dummyPlayerStore, blindAlerter)
-		game.Start(7)
-		cases := []ScheduledAlert{
-			{0 * time.Second, 100},
-			{12 * time.Minute, 200},
-			{24 * time.Minute, 300},
-			{36 * time.Minute, 400},
-		}
-		checkSchedulingCases(t, blindAlerter, cases)
-	})
-
-}
-
-func TestGame_Finish(t *testing.T) {
-	store := &poker.StubPlayerStore{}
-	game := poker.NewGame(store, dummyBlindAlerter)
-
-	game.Finish("Ruth")
-	poker.AssertPlayerWin(t, store, "Ruth")
-}
-
-func checkSchedulingCases(t *testing.T, blindAlerter *SpyBlindAlerter, cases []ScheduledAlert) {
-	for i, want := range cases {
-		t.Run(fmt.Sprint(want), func(t *testing.T) {
-			if len(blindAlerter.alerts) <= i {
-				t.Fatalf("alert %d was not scheduled %v", i, blindAlerter.alerts)
-			}
-
-			got := blindAlerter.alerts[i]
-			assertScheduledAlert(t, got, want)
-
-		})
-	}
-}
-
-func assertScheduledAlert(t *testing.T, got, want ScheduledAlert) {
-	t.Helper()
-
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("got %v, want %v", got, want)
-	}
 }
 
 func assertGameStartedWith(t *testing.T, game *GameSpy, numberOfPlayers int) {
